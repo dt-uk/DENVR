@@ -1,0 +1,20 @@
+groups:
+  - name: mdod_alerts
+    rules:
+    - alert: ServiceDown
+      expr: up == 0
+      for: 1m
+      labels:
+        severity: critical
+        project: mdod
+      annotations:
+        summary: "M-DOD Service {{ $labels.instance }} is down"
+        description: "The service {{ $labels.instance }} has been down for more than 1 minute."
+        
+    - alert: HighResponseTime
+      expr: http_request_duration_seconds{quantile="0.95"} > 1
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High response time detected on {{ $labels.instance }}"

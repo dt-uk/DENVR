@@ -1,0 +1,17 @@
+# M-DOD Prometheus Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['localhost:9093']
+
+scrape_configs:
+  - job_name: 'mdod-services'
+    static_configs:
+      - targets: ['localhost:3000', 'localhost:8000', 'localhost:9090']
+        labels:
+          environment: 'development'
+          project: 'mdod'

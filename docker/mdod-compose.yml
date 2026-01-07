@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  ai-fusion:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MDOD_ENV=production
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          
+  api-gateway:
+    build: ./api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - ai-fusion
+      
+  stream-engine:
+    build: ./data_processing
+    ports:
+      - "9090:9090"
+    
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - api-gateway

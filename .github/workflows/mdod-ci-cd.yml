@@ -1,0 +1,38 @@
+name: M-DOD CI/CD Pipeline
+on: [push, pull_request]
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy Vulnerability Scanner
+        run: |
+          trivy fs --severity HIGH,CRITICAL .
+      - name: Detect Secrets with Gitleaks
+        run: |
+          gitleaks detect --source . --report-format json --report-path gitleaks-report.json
+          
+  build-test:
+    runs-on: ubuntu-latest
+    needs: security-scan
+    strategy:
+      matrix:
+        language: [python, node, go]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.language }} service
+        run: |
+          case "${{ matrix.language }}" in
+            python) cd backend && pip install -r requirements.txt ;;
+            node) cd api && npm ci ;;
+            go) cd data_processing && go build ;;
+          esac
+          
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Staging
+        run: ./scripts/deploy_orchestrate.sh
