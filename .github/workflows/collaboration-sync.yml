@@ -1,0 +1,89 @@
+name: Collaboration Sync
+
+on:
+push:
+branches: [ "**44" ] # Sync on push to any client branch
+workflow_dispatch: # Manual trigger
+
+jobs:
+sync-backup:
+runs-on: ubuntu-latest
+if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+text
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+    with:
+      fetch-depth: 0
+      
+  - name: Detect branch pattern
+    id: detect-branch
+    run: |
+      BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+      echo "Current branch: $BRANCH_NAME"
+      
+      # Extract repository type from branch name
+      if [[ $BRANCH_NAME == *ENVR44 ]]; then
+        REPO_TYPE=$(echo $BRANCH_NAME | sed 's/44//')
+        echo "REPO_TYPE=$REPO_TYPE" >> $GITHUB_OUTPUT
+        echo "BACKUP_REPO=shellworlds/$REPO_TYPE" >> $GITHUB_OUTPUT
+      else
+        echo "REPO_TYPE=ENVR" >> $GITHUB_OUTPUT
+        echo "BACKUP_REPO=shellworlds/ENVR" >> $GITHUB_OUTPUT
+      fi
+      
+  - name: Configure Git
+    run: |
+      git config --global user.name "github-actions"
+      git config --global user.email "github-actions@github.com"
+      
+  - name: Push to backup repository
+    env:
+      BACKUP_REPO: ${{ steps.detect-branch.outputs.BACKUP_REPO }}
+    run: |
+      echo "Pushing to backup repository: $BACKUP_REPO"
+      
+      # Add backup remote
+      git remote add backup "git@github.com:$BACKUP_REPO.git"
+      
+      # Push to same branch name
+      CURRENT_BRANCH="${GITHUB_REF#refs/heads/}"
+      git push backup "$CURRENT_BRANCH" --force
+      
+  - name: Notify on success
+    if: success()
+    run: |
+      echo "Sync completed successfully to backup repository"
+      
+verify-implementations:
+runs-on: ubuntu-latest
+needs: [sync-backup]
+
+text
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+    
+  - name: Setup Python
+    uses: actions/setup-python@v4
+    with:
+      python-version: '3.10'
+      
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: '18'
+      
+  - name: Run verification
+    run: |
+      chmod +x scripts/verify.sh
+      ./scripts/verify.sh
+      
+  - name: Archive verification results
+    if: always()
+    uses: actions/upload-artifact@v3
+    with:
+      name: verification-results
+      path: |
+        scripts/verify.sh
