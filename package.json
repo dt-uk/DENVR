@@ -1,0 +1,26 @@
+{
+  "name": "slk6-noetherian-theorem",
+  "version": "1.0.0",
+  "description": "Implementation of Noetherian module equivalence theorem",
+  "main": "src/node/server.js",
+  "scripts": {
+    "start": "node src/node/server.js",
+    "test": "pytest tests/",
+    "build:go": "go build src/go/verifier.go",
+    "build:cpp": "g++ -o bin/theorem_prover src/cpp/theorem_prover.cpp",
+    "build:java": "javac -d bin src/java/SLK6Theorem.java",
+    "setup": "./scripts/setup.sh",
+    "verify": "./scripts/verify.sh"
+  },
+  "author": "shellworlds",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "pytest": "^7.4.0"
+  }
+}
