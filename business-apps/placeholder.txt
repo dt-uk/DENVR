@@ -1,0 +1,2 @@
+Business application file for $client_name
+To be populated with actual implementation
